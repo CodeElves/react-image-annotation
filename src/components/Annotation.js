@@ -5,6 +5,8 @@ import compose from '../utils/compose'
 import isMouseHovering from '../utils/isMouseHovering'
 import withRelativeMousePos from '../utils/withRelativeMousePos'
 
+import { PolygonSelector } from '../selectors'
+
 import defaultProps from './defaultProps'
 import Overlay from './Overlay'
 
@@ -44,7 +46,15 @@ export default compose(
     onMouseMove: T.func,
     onClick: T.func,
     children: T.object,
-
+    // This prop represents how zoom the image is (default: 1)
+    imageZoomAmount: T.number,
+    // This function is run before the onClick callback is executed (onClick
+    // is only called if onClickCheckFunc resolve to true or doesn't exist)
+    onClickCheckFunc: T.func,
+    // For Polygon Selector
+    onSelectionComplete: T.func,
+    onSelectionClear: T.func,
+    onSelectionUndo: T.func,
     annotations: T.arrayOf(
       T.shape({
         type: T.string
@@ -84,16 +94,19 @@ export default compose(
 
     disableOverlay: T.bool,
     renderOverlay: T.func.isRequired,
-    allowTouch: T.bool
+    allowTouch: T.bool,
+    renderPolygonControls: T.func.isRequired
   }
 
   static defaultProps = defaultProps
 
   targetRef = React.createRef();
+
   componentDidMount() {
     if (this.props.allowTouch) {
       this.addTargetTouchEventListeners();
     }
+    window.addEventListener("resize", this.forceUpdateComponent);
   }
 
   addTargetTouchEventListeners = () => {
@@ -101,12 +114,12 @@ export default compose(
     // so we need to call preventDefault ourselves to stop touch from scrolling
     // Event handlers must be set via ref to enable e.preventDefault()
     // https://github.com/facebook/react/issues/9809
-    
+
     this.targetRef.current.ontouchstart = this.onTouchStart;
     this.targetRef.current.ontouchend = this.onTouchEnd;
     this.targetRef.current.ontouchmove = this.onTargetTouchMove;
     this.targetRef.current.ontouchcancel = this.onTargetTouchLeave;
-    
+
   }
   removeTargetTouchEventListeners = () => {
     this.targetRef.current.ontouchstart = undefined;
@@ -123,6 +136,18 @@ export default compose(
         this.removeTargetTouchEventListeners()
       }
     }
+
+    if (prevProps.imageZoomAmount !== this.props.imageZoomAmount) {
+      this.forceUpdateComponent();
+    }
+  }
+
+  componentWillUnmount = () => {
+    window.removeEventListener("resize", this.forceUpdateComponent);
+  }
+
+  forceUpdateComponent = () => {
+    this.forceUpdate();
   }
 
   setInnerRef = (el) => {
@@ -183,8 +208,17 @@ export default compose(
   onTouchStart = (e) => this.callSelectorMethod("onTouchStart", e)
   onTouchEnd = (e) => this.callSelectorMethod("onTouchEnd", e)
   onTouchMove = (e) => this.callSelectorMethod("onTouchMove", e)
-  onClick = (e) => this.callSelectorMethod('onClick', e)
+  onClick = (e) => {
+    const { onClickCheckFunc } = this.props;
 
+    if (!onClickCheckFunc || onClickCheckFunc(e)) {
+      return this.callSelectorMethod('onClick', e)
+    }
+    return;
+  }
+  onSelectionComplete = () => this.callSelectorMethod('onSelectionComplete')
+  onSelectionClear = () => this.callSelectorMethod('onSelectionClear')
+  onSelectionUndo = () => this.callSelectorMethod('onSelectionUndo')
   onSubmit = () => {
     this.props.onSubmit(this.props.value)
   }
@@ -227,8 +261,6 @@ export default compose(
     }
   }
 
-  
-
   render () {
     const { props } = this
     const {
@@ -239,7 +271,8 @@ export default compose(
       renderSelector,
       renderEditor,
       renderOverlay,
-      allowTouch
+      allowTouch,
+      renderPolygonControls,
     } = props
 
     const topAnnotationAtMouse = this.getTopAnnotationAt(
@@ -295,13 +328,14 @@ export default compose(
           })
         )}
         {props.annotations.map(annotation => (
-          this.shouldAnnotationBeActive(annotation, topAnnotationAtMouse)
-          && (
+          /* this.shouldAnnotationBeActive(annotation, topAnnotationAtMouse)
+          && ( */
             renderContent({
               key: annotation.data.id,
-              annotation: annotation
+              annotation: annotation,
+              imageZoomAmount: props.imageZoomAmount
             })
-          )
+          // )
         ))}
         {!props.disableEditor
           && props.value
@@ -311,7 +345,22 @@ export default compose(
             renderEditor({
               annotation: props.value,
               onChange: props.onChange,
-              onSubmit: this.onSubmit
+              onSubmit: this.onSubmit,
+              imageZoomAmount: props.imageZoomAmount
+            })
+          )
+        }
+        {props.value
+          && props.value.geometry
+          && (props.value.geometry.type === PolygonSelector.TYPE)
+          && (!props.value.selection || !props.value.selection.showEditor)
+          && (
+            renderPolygonControls({
+              annotation: props.value,
+              onSelectionComplete: this.onSelectionComplete,
+              onSelectionClear: this.onSelectionClear,
+              onSelectionUndo: this.onSelectionUndo,
+              imageZoomAmount: props.imageZoomAmount
             })
           )
         }
