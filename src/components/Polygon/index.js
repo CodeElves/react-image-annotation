@@ -1,7 +1,20 @@
 import React from 'react'
 import LineTo from 'react-lineto'
 import styled from 'styled-components'
-import './index.css'
+
+const PolygonLineTo = {
+  boxShadow: '0px 1px 1px 0 white',
+  boxSizing: 'border-box',
+  transition: 'box-shadow 0.21s ease-in-out',
+  zIndex: '-1',
+}
+
+const PolygonLineToActive = {
+  boxShadow: '0px 1px 1px 0 yellow',
+  boxSizing: 'border-box',
+  transition: 'box-shadow 0.21s ease-in-out',
+  zIndex: '-1',
+}
 
 const PointDot = styled.div`
   background: white;
@@ -59,7 +72,7 @@ function Polygon (props) {
             borderColor={'white'}
             borderStyle={'dashed'}
             borderWidth={2}
-            className={(!props.active) ? "Polygon-LineTo" : "Polygon-LineToActive"}
+            style={(!props.active) ? PolygonLineTo : PolygonLineToActive}
           />
         )
       })}
