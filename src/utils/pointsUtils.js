@@ -21,3 +21,15 @@ export function getHorizontallyCentralPoint(points) {
 export function getVerticallyLowestPoint(points) {
   return points.reduce((prev, curr) => (curr.y > prev.y ? curr : prev)).y
 }
+
+export function getMax(points, axis) {
+  return points.reduce((accumulator, point) => {
+    return Math.max(accumulator, point[axis]);
+  }, 0);
+}
+
+export function getMin(points, axis) {
+  return points.reduce((accumulator, point) => {
+    return Math.min(accumulator, point[axis]);
+  }, points[0][axis]);
+}

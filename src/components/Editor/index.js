@@ -19,7 +19,7 @@ const fadeInScale = keyframes`
 
 const Container = styled.div`
   background: white;
-  border-radius: 2px;
+  border-radius: 1px;
   box-shadow:
     0px 1px 5px 0px rgba(0, 0, 0, 0.2),
     0px 2px 2px 0px rgba(0, 0, 0, 0.14),
@@ -48,41 +48,17 @@ function Editor (props) {
       }}
     >
       <Container>
-        {(geometry.type === PolygonSelector.TYPE) &&
-          <RadioButtonEditor
-            onChangeAge={e => props.onChange({
-              ...props.annotation,
-              data: {
-                ...props.annotation.data,
-                age: e.target.value
-              }
-            })}
-            onChangeRenovationType={e => props.onChange({
-              ...props.annotation,
-              data: {
-                ...props.annotation.data,
-                renovationType: e.target.value
-              }
-            })}
-            onSubmit={props.onSubmit}
-            ageValue={props.annotation.data && props.annotation.data.age}
-            renovationTypeValue={props.annotation.data && props.annotation.data.renovationType}
-            imageZoomAmount={props.imageZoomAmount}
-          />
-        }
-        {(geometry.type !== PolygonSelector.TYPE) &&
-          <TextEditor
-            onChange={e => props.onChange({
-              ...props.annotation,
-              data: {
-                ...props.annotation.data,
-                text: e.target.value
-              }
-            })}
-            onSubmit={props.onSubmit}
-            value={props.annotation.data && props.annotation.data.text}
-          />
-        }
+        <TextEditor
+          onChange={e => props.onChange({
+            ...props.annotation,
+            data: {
+              ...props.annotation.data,
+              text: e.target.value
+            }
+          })}
+          onSubmit={props.onSubmit}
+          value={props.annotation.data && props.annotation.data.text}
+        />
       </Container>
     </div>
   )
